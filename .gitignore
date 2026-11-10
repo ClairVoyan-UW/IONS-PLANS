@@ -1,0 +1,12 @@
+# Raw datasets are never committed (size + license). Download with scripts/.
+data/**/raw/
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
