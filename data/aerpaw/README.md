@@ -23,7 +23,7 @@ Real radar measurements to fit and validate the radar emulator (Trello cards E0,
 |---|---|---|
 | Radar tracks (Fortem R20) | `radar_data_N.json` | track ID, range, azimuth, elevation, RCS (dBsm), radial velocity, lat/lon/alt |
 | Ground truth (UAV telemetry) | `vehicleOut.txt` per flight | position, altitude, orientation, velocity |
-| Flights with radar | 33 competition testbed flights + 3 localization flights | |
+| Flights with radar | **17**: competition flights 1–14 + localization flights Opt1–Opt3 (flights 15–33 have no radar file; 16–18 also lack GPS truth) | |
 
 Other modalities (Keysight RF sensor, USRP links, LoRa) are in the zip but not used in this study.
 
@@ -33,10 +33,14 @@ Other modalities (Keysight RF sensor, USRP links, LoRa) are in the zip but not u
 - The radar is probably ground-based, not airborne; confirm its location from the metadata.
 - License: the Dryad page does not name one. Confirm reuse terms with the NC State team before publishing results.
 
-## Data card (fill in during E0)
+## Data card (E0, partly filled from a first look on Nov 10)
 
-- Flights with usable radar + GPS: ___
-- Range span covered: ___ to ___ m
-- Radar scan rate: ___ Hz; GPS rate: ~1 Hz
-- Radar location (lat/lon/alt): ___
-- Split file: `data/aerpaw/splits.csv` (by flight: ~60% fit / 20% tune / 20% held-out)
+- Radar files are under `RF Sensor and Radar/<team>vol<k>_flight<N>/radar_data_*.json` (one JSON message per line, ~860 MB total).
+- Each message has `params` (radar pose: `lla`, `rpy`, `aboveGroundLevel` = 10 m, `globalTime`), `data` (detections) and `trackData` (tracks).
+- Detection fields: range, azimuth, elevation (+ sigmas), radialVelocity, rcsDbsm, sinrDb, lla, relativePositionNed, isStationary, onGround.
+- Radar is **fixed on a 10 m mast** (ground-based). Flight 1: ~3.9 detection messages/s over 940 s; detection ranges 11–920 m (all detections, not only the drone).
+- Ground truth `*_vehicleOut.txt`: ~1 Hz CSV (index, lon, lat, alt, attitude tuple, velocity tuple, ..., local timestamp).
+- **Yaw is not surveyed**, so radar tracks are rotated about the radar by a few degrees. Fix per flight: sort tracks by `timeUnderTrack`, find the drone's tracks among the longest 25–50, then fit the rotation to GPS truth (dataset README; example in `Opt2/radarmatoutput.m`: tracks 491 and 919, rotated 2° CCW).
+- Range covered by the drone: ___ m (to compute; probably under ~1 km, so Pd beyond that is extrapolated through the RCS/r⁴ model).
+- Split file: `data/aerpaw/splits.csv` (by flight: ~11 fit / 3 tune / 3 held-out).
+- Questions on post-processing: Cole Dickerson (dataset author, email in the dataset README).
