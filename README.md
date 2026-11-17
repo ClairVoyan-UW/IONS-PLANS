@@ -13,6 +13,12 @@ contents, caveats) and a script that downloads it into an ignored `raw/` folder.
 | AERPAW AADM (Fortem R20 radar, 33 flights, drone GPS truth) | Real radar for fitting and validating the radar emulator | [`data/aerpaw/`](data/aerpaw/README.md) | `bash scripts/get_aerpaw.sh` ([Dryad](https://doi.org/10.5061/dryad.7d7wm3898)) |
 | AOT / PrimeAir video with true range (3257 crewed-intruder encounters, 2 cameras, label metadata only) | Real camera detections; range labelled to 7.7 km (1st–99th pct 121–5049 m) | [`data/aot/`](data/aot/README.md) | `bash scripts/get_aot.sh` ([AWS Open Data](https://registry.opendata.aws/airborne-object-tracking)) |
 
+## Evaluation
+
+Frozen definitions (declaration, R_d, P_decl with Clopper–Pearson CIs, false declarations per flight hour,
+range bins, 95%-by-4.4 km target, 100/130/170 kt) live in [`configs/eval_config.yaml`](configs/eval_config.yaml)
+and are scored by [`scripts/run_eval.py`](scripts/run_eval.py). See [`eval/README.md`](eval/README.md).
+
 ## Rules
 
 - Split data by **flight**, never by frame. Nobody opens held-out flights before Dec 1.
