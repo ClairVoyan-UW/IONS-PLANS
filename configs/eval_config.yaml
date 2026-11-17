@@ -7,7 +7,7 @@
 # Items marked CONFIRM were chosen when the template was written. Agree on them, then tag eval-freeze-v1.
 
 version: eval-freeze-v1
-frozen_on: null            # set to the date of the freeze tag, e.g. 2026-11-17
+frozen_on: null            # 2026-11-15
 
 # ---------------------------------------------------------------------------------------------------------------
 # Declaration = the first confirmed track.
