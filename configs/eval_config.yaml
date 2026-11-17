@@ -1,0 +1,75 @@
+# Frozen evaluation definitions: PLANS 2027 radar–camera DAA study.
+#
+# This is the ONLY place these numbers live. Scoring code reads them from here; nobody types them anywhere else.
+# Changing anything below after the freeze tag means rerunning every configuration on every dataset.
+# Every run writes this file's SHA-256 into run_meta.json, so a result can always be traced to the rules it used.
+#
+# Items marked CONFIRM were chosen when the template was written. Agree on them, then tag eval-freeze-v1.
+
+version: eval-freeze-v1
+frozen_on: null            # set to the date of the freeze tag, e.g. 2026-11-17
+
+# ---------------------------------------------------------------------------------------------------------------
+# Declaration = the first confirmed track.
+# A track is confirmed at the first scan of the declaring sensor where
+#   (a) that scan is a hit, and
+#   (b) the last N scans of that track (this one included) contain at least M hits.
+# Missed scans must appear in the track log as rows with hit = 0, so that "last N scans" means N scans.
+declaration:
+  m: 3
+  n: 5
+  # The camera may shorten confirmation only inside the radar gate: if any of the last N scans has a camera
+  # detection within gate_deg of the radar track's estimated direction, the radar needs only m_cued hits.
+  # The declaring scan must still be a radar hit, and a camera detection outside the gate is ignored.
+  camera_shortcut:
+    m_cued: 2              # CONFIRM: radar hits needed when the camera confirms inside the gate (1 <= m_cued <= m)
+    gate_deg: 3.0          # CONFIRM: angular radius of the radar gate (about 3 sigma of the radar angle error)
+
+# ---------------------------------------------------------------------------------------------------------------
+# Declaration range R_d = true range (from GPS truth) at the declaration time, linearly interpolated.
+# Matching a declared track to a truth intruder (this decides "real" vs "false" declarations):
+association:
+  max_angle_deg: 3.0       # CONFIRM: track direction must be within this angle of the true intruder direction
+  max_range_err_frac: 0.15 # CONFIRM: |estimated - true| / true range; skipped if a configuration has no range estimate
+  max_time_gap_s: 1.0      # truth must exist within this time of the declaration
+
+# ---------------------------------------------------------------------------------------------------------------
+# P_decl(r), counted once per ENCOUNTER (never per frame or per scan).
+# For each bin [lo, hi):
+#   eligible encounters (n) = approaching encounters whose truth starts at or beyond hi and later reaches lo
+#   declared (k)            = eligible encounters declared no later than the moment true range first reaches lo
+# So P_decl for a bin = "probability of declaring before the intruder gets closer than the bin's inner edge".
+range_bins_km: [0.7, 1.0, 1.5, 2.5, 4.6]
+p_decl:
+  confidence: 0.95         # two-sided Clopper–Pearson (exact binomial) interval
+  min_lead_s: 0.0          # CONFIRM: truth must start at least this long before reaching the bin's outer edge
+
+# ---------------------------------------------------------------------------------------------------------------
+# Target: P_decl >= 0.95 by 4.4 km (eligible = truth starts at or beyond 4.4 km).
+# Pass rule: the point estimate meets the target. The Clopper–Pearson lower bound is reported alongside it.
+target:
+  p_decl_min: 0.95
+  range_km: 4.4
+
+# ---------------------------------------------------------------------------------------------------------------
+# Closing-speed cases. Each encounter is assigned to the nearest case by its mean closing speed on approach
+# (from truth); encounters more than speed_match_tol_kt from every case are reported only under "all".
+closing_speeds_kt: [100, 130, 170]
+baseline_speed_kt: 100     # CONFIRM: 100 kt = 51.4 m/s. (The task text said "170 kt (54 m/s, baseline)", but 54 m/s is about 105 kt.)
+speed_match_tol_kt: 15
+
+# ---------------------------------------------------------------------------------------------------------------
+# False declarations per flight hour = declared tracks that match no truth intruder / total flight hours.
+# Tracks that match an excluded (QC-failed) truth encounter count as neither real nor false.
+false_declarations:
+  confidence: 0.95         # two-sided exact Poisson interval
+
+# ---------------------------------------------------------------------------------------------------------------
+# The four configurations. All are scored by the same functions; only the input track file changes.
+#   declare_on:      which sensor's hits drive M-of-N ("camera" for camera-only, "radar" otherwise)
+#   camera_shortcut: whether the in-gate camera shortcut above is allowed
+configurations:
+  camera_only:       {declare_on: camera, camera_shortcut: false}   # CONFIRM: camera-only uses the same M-of-N on camera frames
+  radar_only:        {declare_on: radar,  camera_shortcut: false}
+  radar_cued_camera: {declare_on: radar,  camera_shortcut: true}
+  full_fusion:       {declare_on: radar,  camera_shortcut: true}    # Kalman: camera bearing + radar range/range-rate
